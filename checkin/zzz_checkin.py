@@ -19,7 +19,7 @@ def perform_zzz_checkin():
     console.print(Panel("⚡ Zenless Zone Zero Daily Check-in", style="bold yellow"))
     
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         
         # Load saved session

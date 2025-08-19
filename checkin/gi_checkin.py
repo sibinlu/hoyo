@@ -19,7 +19,7 @@ def perform_gi_checkin():
     console.print(Panel("🎮 Genshin Impact Daily Check-in", style="bold blue"))
     
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         
         # Load saved session
