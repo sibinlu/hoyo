@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# HoYoverse Check-in Automation Script
+# Usage: hoyo checkin
+
+# Get the directory where this script is located (parent of bin)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Check if virtual environment exists
+if [ ! -d "$SCRIPT_DIR/venv" ]; then
+    echo "❌ Virtual environment not found. Please run 'python3 -m venv venv' first."
+    exit 1
+fi
+
+# Activate virtual environment
+source "$SCRIPT_DIR/venv/bin/activate"
+
+# Check command
+if [ "$1" = "checkin" ]; then
+    echo "🎮 Starting HoYoLab Check-in Automation..."
+    cd "$SCRIPT_DIR"
+    python main.py
+elif [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo "HoYoverse Check-in Automation"
+    echo ""
+    echo "Usage:"
+    echo "  hoyo checkin    - Run daily check-ins for all enabled games"
+    echo "  hoyo help       - Show this help message"
+    echo ""
+    echo "Environment Variables:"
+    echo "  HOYO_ENABLED_GAMES  - Games to enable (gi,hsr,zzz)"
+    echo "  SESSION_PATH        - Session storage directory"
+    echo "  HOYO_HEADLESS       - Run in headless mode (true/false)"
+else
+    echo "❌ Unknown command: $1"
+    echo "Use 'hoyo help' for available commands"
+    exit 1
+fi

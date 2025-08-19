@@ -1,43 +1,27 @@
 """
 HoyoLab login management
-Handles authentication and session persistence for HoyoLab.
+Handles authentication and session persistence for HoyoLab using secure session management.
 """
 
-import json
-import os
 from playwright.sync_api import sync_playwright
 from loguru import logger
 from rich.console import Console
 
+from .secure_session import get_session_manager
+
 console = Console()
 
-SESSION_FILE = os.path.join(os.getenv("SESSION_PATH", "checkin"), "hoyo_session_data.json")
 HOYOLAB_LOGIN_CHECK_URL = "https://www.hoyolab.com/setting/privacy"
 
 def load_session():
-    """Load saved session data from file."""
-    if not os.path.exists(SESSION_FILE):
-        return None
-    
-    try:
-        with open(SESSION_FILE, 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        logger.warning(f"Failed to load session data: {e}")
-        return None
+    """Load saved session data using secure session manager."""
+    session_manager = get_session_manager()
+    return session_manager.load_session()
 
 def save_session(cookies, local_storage=None):
-    """Save session data to file."""
-    try:
-        session_data = {
-            "cookies": cookies,
-            "local_storage": local_storage or {}
-        }
-        with open(SESSION_FILE, 'w') as f:
-            json.dump(session_data, f, indent=2)
-        logger.info("Session data saved successfully")
-    except Exception as e:
-        logger.error(f"Failed to save session data: {e}")
+    """Save session data using secure session manager."""
+    session_manager = get_session_manager()
+    return session_manager.save_session(cookies, local_storage)
 
 def is_logged_in(page):
     """Check if user is logged in by checking privacy settings page."""
@@ -83,9 +67,12 @@ def wait_for_login_and_close():
             try:
                 cookies = context.cookies()
                 if cookies:
-                    save_session(cookies)
-                    console.print("✅ Session saved successfully", style="green")
-                    return True
+                    if save_session(cookies):
+                        console.print("✅ Session saved successfully", style="green")
+                        return True
+                    else:
+                        console.print("⚠️ Failed to save session", style="yellow")
+                        return False
             except Exception as e:
                 logger.warning(f"Failed to save session: {e}")
             
