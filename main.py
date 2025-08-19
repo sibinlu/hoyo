@@ -4,13 +4,16 @@ HoyoLab Check-in Automation - Refactored Version
 Entry point for the application with improved architecture.
 """
 
-from loguru import logger
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
 import sys
 from typing import Dict
 
+# Configure logging before other imports
+from logging_config import setup_logging
+setup_logging()
+
+from loguru import logger
 from auth.auth import check_login_status, load_session
 from checkin.config import GAMES, Game, AppConfig, get_enabled_games
 from checkin.exceptions import CheckinResult, get_result_display_info
@@ -97,8 +100,6 @@ def main():
         # Load application configuration
         app_config = AppConfig.from_env()
         
-        console.print(Panel("🎮 HoyoLab Check-in Automation", style="bold blue"))
-        
         # Check login status
         if not check_login_status():
             logger.error("Login required. Please complete authentication.")
@@ -117,9 +118,6 @@ def main():
         # Get enabled games
         enabled_games = get_enabled_games()
         logger.info(f"Enabled games: {[game.value for game in enabled_games]}")
-        
-        # Perform daily check-ins
-        console.print("\n📅 Starting daily check-ins...", style="cyan")
         
         results = {}
         for game in enabled_games:

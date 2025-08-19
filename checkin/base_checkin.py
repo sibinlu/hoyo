@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from playwright.sync_api import sync_playwright, Page
 from loguru import logger
 from rich.console import Console
-from rich.panel import Panel
 
 from checkin.config import GameConfig, AppConfig
 from checkin.exceptions import CheckinResult, CheckinException, SessionExpiredException, TimeoutException, classify_error
@@ -27,8 +26,6 @@ class BaseCheckin(ABC):
         Returns:
             CheckinResult indicating the outcome of the check-in attempt
         """
-        self.console.print(Panel(f"{self.config.name} Daily Check-in", style=self.config.console_style))
-        
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.app_config.headless)
             context = browser.new_context()
