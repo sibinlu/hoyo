@@ -11,7 +11,7 @@ from rich.console import Console
 
 console = Console()
 
-SESSION_FILE = "checkin/session_data.json"
+SESSION_FILE = os.path.join(os.getenv("SESSION_PATH", "checkin"), "hoyo_session_data.json")
 HOYOLAB_LOGIN_CHECK_URL = "https://www.hoyolab.com/setting/privacy"
 
 def load_session():
