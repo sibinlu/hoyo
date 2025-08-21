@@ -7,14 +7,14 @@ from playwright.sync_api import Page
 from loguru import logger
 
 from checkin.base_checkin import BaseCheckin
-from checkin.config import GAMES, Game, AppConfig
+from checkin.config import GAMES, Game, CheckinConfig
 from checkin.exceptions import CheckinResult
 
 class ZenlessZoneZeroCheckin(BaseCheckin):
     """Zenless Zone Zero specific check-in implementation."""
     
-    def __init__(self, app_config: AppConfig = None, session_data: dict = None):
-        super().__init__(app_config, session_data)
+    def __init__(self, checkin_config: CheckinConfig = None, session_data: dict = None):
+        super().__init__(checkin_config, session_data)
         self.config = GAMES[Game.ZZZ]
     
     def _find_clickable_item(self, page: Page):

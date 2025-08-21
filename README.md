@@ -1,10 +1,13 @@
-# HoYoverse Daily Check-in Automation
+# HoYoverse Automation
 
-Automated daily check-in for Genshin Impact, Honkai Star Rail, and Zenless Zone Zero.
+Automates daily check-ins and code redemption for Genshin Impact, Honkai Star Rail, and Zenless Zone Zero.
 
 ## Setup
 
+Requires Python 3.11+
+
 ```bash
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 playwright install
@@ -13,48 +16,34 @@ playwright install
 ## Usage
 
 ```bash
-# Run check-ins for all games
-./bin/hoyo checkin
-
-# Show help
-./bin/hoyo help
+./bin/hoyo checkin redeem    # Check-in + redeem codes
+./bin/hoyo checkin           # Check-in only  
+./bin/hoyo redeem            # Redeem codes only
+./bin/hoyo help              # Show help
 ```
+
+## Features
+
+- **Daily Check-ins**: Automated check-ins for all games
+- **Code Redemption**: Auto-search and redeem HoYoLab codes  
+- **Duplicate Prevention**: Tracks redeemed codes locally
+- **Multi-command**: Run multiple operations in sequence
 
 ## Configuration
 
-Set environment variables to customize behavior:
+```bash
+export HOYO_ENABLED_GAMES="gi,hsr,zzz"    # Games to enable
+export HOYO_HEADLESS="true"               # Headless mode
+```
+
+## System Install
 
 ```bash
-export HOYO_ENABLED_GAMES="gi,hsr,zzz"    # Games to check (gi/hsr/zzz)
-export SESSION_PATH="/secure/path"         # Session storage directory
-export HOYO_HEADLESS="true"               # Headless browser mode
-```
-
-## First Run
-
-The first run opens a browser for HoYoLab login. Complete authentication and close the browser to save your session.
-
-## Project Structure
-
-```
-hoyo/
-├── bin/hoyo          # Command-line interface
-├── main.py           # Main application
-├── auth/             # Authentication & session management
-├── checkin/          # Game-specific check-in logic
-└── venv/             # Virtual environment
-```
-
-## System-wide Installation
-
-Add to your PATH or create symlink:
-
-```bash
-# Option 1: Add to PATH
+# Add to PATH
 export PATH="$PATH:/path/to/hoyo/bin"
 
-# Option 2: Create symlink
+# Or create symlink  
 sudo ln -s /path/to/hoyo/bin/hoyo /usr/local/bin/hoyo
 ```
 
-Then use `hoyo checkin` from anywhere.
+First run opens browser for HoYoLab login authentication.

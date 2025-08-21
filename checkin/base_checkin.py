@@ -8,14 +8,14 @@ from playwright.sync_api import sync_playwright, Page
 from loguru import logger
 from rich.console import Console
 
-from checkin.config import GameConfig, AppConfig
+from checkin.config import GameConfig, CheckinConfig
 from checkin.exceptions import CheckinResult, CheckinException, SessionExpiredException, TimeoutException, classify_error
 
 class BaseCheckin(ABC):
     """Base class for game check-in automation."""
     
-    def __init__(self, app_config: AppConfig = None, session_data: dict = None):
-        self.app_config = app_config or AppConfig()
+    def __init__(self, checkin_config: CheckinConfig = None, session_data: dict = None):
+        self.checkin_config = checkin_config or CheckinConfig()
         self.console = Console()
         self.session_data = session_data
     
@@ -27,7 +27,7 @@ class BaseCheckin(ABC):
             CheckinResult indicating the outcome of the check-in attempt
         """
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=self.app_config.headless)
+            browser = p.chromium.launch(headless=self.checkin_config.headless)
             context = browser.new_context()
             
             try:
@@ -83,13 +83,13 @@ class BaseCheckin(ABC):
         # Navigate to check-in page
         logger.info(f"Opening {self.config.name} check-in page...")
         page.goto(self.config.url)
-        page.wait_for_load_state("networkidle", timeout=self.app_config.page_load_timeout)
+        page.wait_for_load_state("networkidle", timeout=self.checkin_config.page_load_timeout)
         
         # Close any popup dialogs
         self._close_popups(page)
         
         # Wait for page to be ready
-        page.wait_for_timeout(self.app_config.medium_wait)
+        page.wait_for_timeout(self.checkin_config.medium_wait)
         
         # Find clickable items
         clickable_item = self._find_clickable_item(page)
@@ -110,7 +110,7 @@ class BaseCheckin(ABC):
             if close_button.count() > 0:
                 close_button.click()
                 logger.info(f"Closed popup dialog for {self.config.name}")
-                page.wait_for_timeout(self.app_config.short_wait)
+                page.wait_for_timeout(self.checkin_config.short_wait)
         except Exception as e:
             logger.info(f"No dialog to close for {self.config.name} or failed to close: {e}")
         
@@ -123,14 +123,14 @@ class BaseCheckin(ABC):
         
         for container in dialog_containers:
             try:
-                page.wait_for_selector(container, state="hidden", timeout=self.app_config.dialog_close_timeout)
+                page.wait_for_selector(container, state="hidden", timeout=self.checkin_config.dialog_close_timeout)
                 logger.info(f"All dialogs have disappeared for {self.config.name}")
                 break
             except:
                 continue
         
         # Additional wait to ensure page stability
-        page.wait_for_timeout(self.app_config.short_wait)
+        page.wait_for_timeout(self.checkin_config.short_wait)
     
     @abstractmethod
     def _find_clickable_item(self, page: Page):
@@ -168,14 +168,14 @@ class BaseCheckin(ABC):
             
             # Scroll to element and hover
             clickable_item.scroll_into_view_if_needed()
-            page.wait_for_timeout(self.app_config.short_wait)
+            page.wait_for_timeout(self.checkin_config.short_wait)
             clickable_item.hover()
             logger.info("Moved mouse to clickable item")
-            page.wait_for_timeout(self.app_config.short_wait)
+            page.wait_for_timeout(self.checkin_config.short_wait)
             
             # Try clicking
-            clickable_item.click(timeout=self.app_config.click_timeout, force=True)
-            page.wait_for_timeout(self.app_config.medium_wait)
+            clickable_item.click(timeout=self.checkin_config.click_timeout, force=True)
+            page.wait_for_timeout(self.checkin_config.medium_wait)
             
             logger.info("Successfully clicked check-in item")
             return True
@@ -200,7 +200,7 @@ class BaseCheckin(ABC):
             js_selector = self._get_javascript_click_selector()
             if js_selector:
                 page.evaluate(f"document.querySelector('{js_selector}').click()")
-                page.wait_for_timeout(self.app_config.medium_wait)
+                page.wait_for_timeout(self.checkin_config.medium_wait)
                 logger.info("Successfully clicked using JavaScript")
                 return True
         except Exception as js_error:
@@ -231,7 +231,7 @@ class BaseCheckin(ABC):
         try:
             # Wait for success dialog to appear
             success_selector = f"text='{self.config.success_message}'"
-            page.wait_for_selector(success_selector, timeout=self.app_config.success_wait_timeout)
+            page.wait_for_selector(success_selector, timeout=self.checkin_config.success_wait_timeout)
             logger.info(f"{self.config.name} success message found")
             self.console.print("✅ Check-in completed successfully!", style="green")
             return CheckinResult.SUCCESS

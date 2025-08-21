@@ -26,8 +26,8 @@ class GameConfig:
     background_image_url: str = ""
 
 @dataclass
-class AppConfig:
-    """Application-wide configuration settings."""
+class CheckinConfig:
+    """Check-in specific configuration settings."""
     session_timeout: int = 15000
     page_load_timeout: int = 15000
     click_timeout: int = 10000
