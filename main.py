@@ -12,7 +12,8 @@ from logging_config import setup_logging
 setup_logging()
 
 from loguru import logger
-from auth.auth import check_login_status, load_session
+from auth.auth import check_login_status, load_session, wait_for_login_and_close
+from auth.secure_session import get_session_manager
 from checkin.checkin import main_checkin
 from redeem.main import main_redeem
 
@@ -25,12 +26,34 @@ def show_help():
     console.print("\nAvailable commands:")
     console.print("  checkin  - Perform daily check-ins for all enabled games")
     console.print("  redeem   - Search and redeem available codes")
+    console.print("  auth     - Remove existing auth data and redo authentication")
     console.print("  help     - Show this help message")
     console.print("\nExamples:")
     console.print("  hoyo checkin")
     console.print("  hoyo redeem") 
+    console.print("  hoyo auth")
     console.print("  hoyo checkin redeem")
     console.print("  hoyo redeem checkin")
+
+def handle_auth():
+    """Handle authentication renewal by clearing existing session and re-authenticating."""
+    console.print("🔐 Renewing authentication...", style="bold cyan")
+    
+    # Clear existing session data
+    session_manager = get_session_manager()
+    if session_manager.clear_session():
+        console.print("✅ Existing auth data cleared", style="green")
+    else:
+        console.print("⚠️ Failed to clear existing auth data", style="yellow")
+    
+    # Initiate new authentication
+    console.print("🔑 Starting new authentication process...", style="cyan")
+    if wait_for_login_and_close():
+        console.print("✅ Authentication completed successfully", style="green")
+        return True
+    else:
+        console.print("❌ Authentication failed", style="red")
+        return False
 
 
 def main():
@@ -45,14 +68,29 @@ def main():
             return
         
         # Validate all commands
-        valid_commands = ["checkin", "redeem"]
+        valid_commands = ["checkin", "redeem", "auth"]
         for command in commands:
             if command not in valid_commands:
                 console.print(f"❌ Unknown command: {command}", style="red")
                 console.print("Use 'hoyo help' for available commands", style="yellow")
                 sys.exit(1)
         
-        # Check login status
+        # Handle auth command separately (doesn't need existing authentication)
+        if "auth" in commands:
+            if len(commands) == 1:
+                # Only auth command, handle it and exit
+                if handle_auth():
+                    console.print("🎉 Authentication renewal completed!", style="bold green")
+                else:
+                    console.print("❌ Authentication renewal failed", style="bold red")
+                    sys.exit(1)
+                return
+            else:
+                console.print("❌ 'auth' command cannot be combined with other commands", style="red")
+                console.print("Please run 'hoyo auth' separately", style="yellow")
+                sys.exit(1)
+        
+        # Check login status for other commands
         if not check_login_status():
             logger.error("Login required. Please complete authentication.")
             sys.exit(1)
