@@ -54,7 +54,7 @@ def redeem(session_data: dict, code: str ,redemption_url: str, steps: list[tuple
     result = {"success": False, "message": ""}
     
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         
         try:
