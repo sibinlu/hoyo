@@ -60,7 +60,7 @@ def main():
     """Main entry point for HoyoLab automation."""
     try:
         # Parse command line arguments - support multiple commands
-        commands = sys.argv[1:] if len(sys.argv) > 1 else ["redeem"]
+        commands = sys.argv[1:] if len(sys.argv) > 1 else ["auth"]
         
         # Handle help command
         if "help" in commands:
