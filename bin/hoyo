@@ -19,4 +19,4 @@ source "$SCRIPT_DIR/venv/bin/activate"
 cd "$SCRIPT_DIR"
 
 # Pass all arguments to Python script
-python main.py "$@"
+python3 main.py "$@"
