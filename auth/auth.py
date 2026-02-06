@@ -50,7 +50,7 @@ def wait_for_login_and_close():
     # Check if auto-login credentials are available
     hoyo_user = os.getenv("HOYO_USER")
     hoyo_password = os.getenv("HOYO_PASSWORD")
-    auto_login = hoyo_user and hoyo_password
+    auto_login = bool(hoyo_user and hoyo_password)
 
     if auto_login:
         console.print("🔑 Auto-login enabled with environment variables", style="cyan")

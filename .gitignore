@@ -1,11 +1,28 @@
+# Session and data files
 session_data.json
 redeemed_codes.json
 logs/
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+
+# Virtual environments
 env/
 venv/
 .venv/
+
+# Environment variables (contains secrets)
+.env
+.env.local
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Docker volumes
+docker-compose.override.yml

@@ -1,0 +1,20 @@
+services:
+  hoyo:
+    build: .
+    image: hoyo-checkin:latest
+    # Read environment variables from .env file in the same directory
+    # Create your .env file based on .env.example (not tracked in git)
+    env_file:
+      - .env
+    # Mount volumes for persistent data
+    volumes:
+      # Mount custom session data directory
+      - /Users/sixomac/SessionData:/app/SessionData
+      # Mount checkin directory (fallback for default session location)
+      - ./checkin:/app/checkin
+      # Mount logs directory
+      - ./logs:/app/logs
+      # Mount redeemed codes file
+      - ./redeemed_codes.json:/app/redeemed_codes.json
+    # Default command (can be overridden)
+    command: checkin redeem

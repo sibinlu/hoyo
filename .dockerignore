@@ -1,0 +1,46 @@
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.claude/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files (will be passed at runtime)
+.env
+.env.local
+
+# Session data (will be mounted as volume)
+auth/session_data.json
+
+# Test files
+tests/
+pytest_cache/
+
+# Documentation
+*.md
+claude.md
+README.md
