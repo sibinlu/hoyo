@@ -12,16 +12,25 @@ def hoyo_auth_flow():
 
     # Run auth using local binary (can't run in Docker due to browser requirement)
     print("Running hoyo auth locally...")
-    result = subprocess.run(
+
+    # Stream output in real-time
+    process = subprocess.Popen(
         ["/Users/sixomac/project/hoyo/bin/hoyo", "auth"],
         cwd=hoyo_dir,
-        check=True,
-        capture_output=True,
-        text=True
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
     )
-    print(result.stdout)
-    if result.stderr:
-        print(result.stderr)
+
+    # Print each line as it comes
+    for line in process.stdout:
+        print(line.rstrip())
+
+    # Wait for completion and check return code
+    return_code = process.wait()
+    if return_code != 0:
+        raise Exception(f"Command failed with exit code {return_code}")
 
     print("✅ Hoyo authentication completed successfully!")
 
@@ -45,27 +54,25 @@ def hoyo_checkin_flow():
     print("Running hoyo checkin and redeem via Docker...")
     print(f"Working directory: {hoyo_dir}")
 
-    # Don't capture output so we can see errors in real-time
-    result = subprocess.run(
+    # Stream output in real-time
+    process = subprocess.Popen(
         ["docker-compose", "run", "--rm", "hoyo", "checkin", "redeem"],
         cwd=hoyo_dir,
-        check=False,  # Don't raise exception immediately
-        capture_output=True,
-        text=True
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
     )
 
-    # Print all output
-    if result.stdout:
-        print("STDOUT:")
-        print(result.stdout)
-    if result.stderr:
-        print("STDERR:")
-        print(result.stderr)
+    # Print each line as it comes
+    for line in process.stdout:
+        print(line.rstrip())
 
-    # Check return code
-    if result.returncode != 0:
-        print(f"❌ Docker command failed with exit code {result.returncode}")
-        raise Exception(f"Docker command failed: {result.stderr}")
+    # Wait for completion and check return code
+    return_code = process.wait()
+    if return_code != 0:
+        print(f"❌ Docker command failed with exit code {return_code}")
+        raise Exception(f"Docker command failed with exit code {return_code}")
 
     print("✅ Hoyo checkin completed successfully!")
 
