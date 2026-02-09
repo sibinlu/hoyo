@@ -1,7 +1,8 @@
 """
 Prefect deployment for Hoyo daily automation.
 
-This script is called by the external Prefect installation in ~/project/housework/prefect
+This script is called using Python from the external Prefect installation.
+Example: ~/project/housework/prefect/prefect-env/bin/python
 """
 import os
 import subprocess

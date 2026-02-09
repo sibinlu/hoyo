@@ -9,10 +9,11 @@ This deployment setup allows you to run Hoyo automation via Prefect on any serve
 
 ## Architecture
 
-- **Docker**: Containerizes the Hoyo app (no browsers inside - only 762MB!)
+- **Local Execution**: Prefect flow uses local Python venv + binary (`bin/hoyo`)
 - **Playwright Browsers**: Shared cache on host system (~300MB)
 - **Prefect**: External installation manages scheduling (e.g., `~/project/housework/prefect`)
 - **Workflow**: auth → checkin → redeem (runs daily)
+- **Docker**: Optional - only for manual testing (no browsers inside - 762MB)
 
 ## Quick Start
 
@@ -29,27 +30,28 @@ cd ~/project/hoyo
 
 The script will:
 1. Create `.env` if missing
-2. Prompt for `PREFECT_PATH` if not set
+2. Prompt for `PREFECT_BIN` path if not set
 3. Create Python 3.11 venv
 4. Install dependencies from requirements.txt
 5. Install Playwright browsers to shared cache (if needed)
-6. Build Docker image
-7. Register deployment with Prefect
+6. Register deployment with Prefect
+
+**Note**: Docker is NOT used by the Prefect flow. The flow uses the local binary directly.
 
 ### Prerequisites
 
-- Docker and docker-compose installed
 - Python 3.11 installed
 - Prefect installation with `personal-pool` worker configured
 - Git (for pulling code)
+- Docker (optional - only for manual testing)
 
 ## Environment Variables
 
 Create a `.env` file in the project root:
 
 ```bash
-# Path to external Prefect installation (REQUIRED)
-PREFECT_PATH=~/project/housework/prefect
+# Path to Prefect binary (REQUIRED)
+PREFECT_BIN=~/project/housework/prefect/prefect-env/bin/prefect
 
 # Optional: Custom session data path
 SESSION_DATA_PATH=~/SessionData
@@ -136,8 +138,9 @@ git pull
 ## Troubleshooting
 
 ### Issue: Prefect deployment fails
-- Check `PREFECT_PATH` is correct in `.env`
-- Verify Prefect venv exists at `$PREFECT_PATH/venv`
+- Check `PREFECT_BIN` path is correct in `.env`
+- Verify Prefect binary exists: `ls -la $PREFECT_BIN`
+- Ensure Python is in the same directory: `ls -la $(dirname $PREFECT_BIN)/python`
 - Ensure Prefect worker is running: `prefect worker start --pool personal-pool`
 
 ### Issue: Docker build fails
@@ -206,6 +209,12 @@ work_pool_name="your-pool-name"
 Add to `.env`:
 ```bash
 SESSION_DATA_PATH=/custom/path/to/session
+```
+
+### Different Prefect installation
+Add to `.env`:
+```bash
+PREFECT_BIN=/path/to/your/prefect/bin/prefect
 ```
 
 ## Key Design Decisions

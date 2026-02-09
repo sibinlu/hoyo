@@ -28,28 +28,31 @@ if [ ! -f "$PROJECT_ROOT/.env" ]; then
     fi
 fi
 
-# Check for PREFECT_PATH in .env
-if ! grep -q "^PREFECT_PATH=" "$PROJECT_ROOT/.env" 2>/dev/null || [ -z "$(grep "^PREFECT_PATH=" "$PROJECT_ROOT/.env" | cut -d'=' -f2)" ]; then
-    echo -e "${YELLOW}⚠️  PREFECT_PATH not set in .env${NC}"
-    echo -n "Enter path to Prefect installation (e.g., ~/project/housework/prefect): "
-    read PREFECT_PATH
+# Check for PREFECT_BIN in .env
+if ! grep -q "^PREFECT_BIN=" "$PROJECT_ROOT/.env" 2>/dev/null || [ -z "$(grep "^PREFECT_BIN=" "$PROJECT_ROOT/.env" | cut -d'=' -f2)" ]; then
+    echo -e "${YELLOW}⚠️  PREFECT_BIN not set in .env${NC}"
+    echo -n "Enter path to Prefect binary (e.g., ~/project/housework/prefect/prefect-env/bin/prefect): "
+    read PREFECT_BIN
 
     # Expand ~ to full path
-    PREFECT_PATH=$(eval echo "$PREFECT_PATH")
+    PREFECT_BIN=$(eval echo "$PREFECT_BIN")
 
-    if [ ! -d "$PREFECT_PATH" ]; then
-        echo -e "${RED}❌ Directory does not exist: $PREFECT_PATH${NC}"
+    if [ ! -f "$PREFECT_BIN" ]; then
+        echo -e "${RED}❌ Prefect binary not found at: $PREFECT_BIN${NC}"
         exit 1
     fi
 
     # Add to .env
-    echo "PREFECT_PATH=$PREFECT_PATH" >> "$PROJECT_ROOT/.env"
-    echo -e "${GREEN}✓ PREFECT_PATH added to .env${NC}"
+    echo "PREFECT_BIN=$PREFECT_BIN" >> "$PROJECT_ROOT/.env"
+    echo -e "${GREEN}✓ PREFECT_BIN added to .env${NC}"
 fi
 
-# Source .env to get PREFECT_PATH
-export $(grep "^PREFECT_PATH=" "$PROJECT_ROOT/.env" | xargs)
-PREFECT_PATH=$(eval echo "$PREFECT_PATH")
+# Source .env to get PREFECT_BIN
+export $(grep "^PREFECT_BIN=" "$PROJECT_ROOT/.env" | xargs)
+PREFECT_BIN=$(eval echo "$PREFECT_BIN")
+
+# Get Python from the same directory as prefect binary
+PREFECT_PYTHON="$(dirname "$PREFECT_BIN")/python"
 
 echo -e "\n📦 Setting up Python virtual environment..."
 
@@ -93,20 +96,16 @@ if ! grep -q "^PLAYWRIGHT_CACHE=" "$PROJECT_ROOT/.env" 2>/dev/null; then
     echo "PLAYWRIGHT_CACHE=$PLAYWRIGHT_CACHE" >> "$PROJECT_ROOT/.env"
 fi
 
-echo -e "\n🐳 Building Docker image..."
-docker-compose build
-echo -e "${GREEN}✓ Docker image built${NC}"
-
 echo -e "\n📅 Deploying to Prefect..."
 
-# Check if Prefect venv exists
-if [ ! -d "$PREFECT_PATH/venv" ]; then
-    echo -e "${RED}❌ Prefect venv not found at: $PREFECT_PATH/venv${NC}"
+# Check if Python exists in the same directory
+if [ ! -f "$PREFECT_PYTHON" ]; then
+    echo -e "${RED}❌ Python not found at: $PREFECT_PYTHON${NC}"
     exit 1
 fi
 
 # Use Prefect's Python to deploy
-"$PREFECT_PATH/venv/bin/python" "$PROJECT_ROOT/deploy/prefect_deployment.py"
+"$PREFECT_PYTHON" "$PROJECT_ROOT/deploy/prefect_deployment.py"
 echo -e "${GREEN}✓ Deployment registered with Prefect${NC}"
 
 echo -e "\n${GREEN}✅ Deployment complete!${NC}"
@@ -115,4 +114,7 @@ echo "Next steps:"
 echo "  1. Make sure Prefect worker is running: prefect worker start --pool personal-pool"
 echo "  2. View deployments: prefect deployment ls"
 echo "  3. Trigger manually: prefect deployment run hoyo-daily-flow"
+echo ""
+echo "Note: Docker is optional. The Prefect flow uses the local binary."
+echo "To build Docker image: docker-compose build"
 echo ""
