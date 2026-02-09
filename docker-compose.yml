@@ -9,12 +9,14 @@ services:
     # Mount volumes for persistent data
     volumes:
       # Mount custom session data directory
-      - /Users/sixomac/SessionData:/app/SessionData
+      - ${SESSION_DATA_PATH:-~/SessionData}:/app/SessionData
       # Mount checkin directory (fallback for default session location)
       - ./checkin:/app/checkin
       # Mount logs directory
       - ./logs:/app/logs
       # Mount redeemed codes file
       - ./redeemed_codes.json:/app/redeemed_codes.json
+      # Mount host's Playwright browser cache (read-only for safety)
+      - ${PLAYWRIGHT_CACHE:-~/.cache/ms-playwright}:/ms-playwright:ro
     # Default command (can be overridden)
     command: checkin redeem

@@ -1,161 +1,226 @@
-# Prefect Deployment
-
-This directory contains Prefect workflow deployments for automating HoYoLab check-ins and code redemption.
+# Hoyo Deployment Guide
 
 ## Overview
 
-Two automated flows:
-- **hoyo-auth-weekly**: Renews authentication every Sunday at 2 AM
-- **hoyo-checkin-daily**: Runs check-in and code redemption daily at 10 AM
-
-## Prerequisites
-
-1. **Prefect installed** in your environment:
-   ```bash
-   pip install prefect
-   ```
-
-2. **Prefect server running** with a local work pool:
-   ```bash
-   prefect server start
-   prefect worker start --pool my-local-pool
-   ```
-
-3. **Docker setup completed** (see main README.md):
-   - Docker image built: `docker-compose build`
-   - Environment variables configured in `.env`
-   - Session data exists at `/Users/sixomac/SessionData/hoyo_session_data.json`
-
-4. **Authentication completed locally** (one-time):
-   ```bash
-   cd /Users/sixomac/project/hoyo
-   ./bin/hoyo auth
-   ```
-
-## Deploying Flows
-
-From the hoyo project root:
-
-```bash
-cd /Users/sixomac/project/hoyo
-python deploy/prefect_deployment.py
-```
-
-This will deploy both flows to your Prefect server.
+This deployment setup allows you to run Hoyo automation via Prefect on any server. The workflow:
+1. Pull code from git
+2. Run `deploy/start.sh`
+3. Script sets up everything and registers with Prefect
 
 ## Architecture
 
-### hoyo_auth_flow (Weekly - Sunday 2 AM)
-- Runs authentication locally (requires browser access)
-- Updates session data for the week
-- Uses local `./bin/hoyo auth` command
+- **Docker**: Containerizes the Hoyo app (no browsers inside - only 762MB!)
+- **Playwright Browsers**: Shared cache on host system (~300MB)
+- **Prefect**: External installation manages scheduling (e.g., `~/project/housework/prefect`)
+- **Workflow**: auth → checkin → redeem (runs daily)
 
-### hoyo_checkin_flow (Daily - 10 AM)
-- Checks for valid session data
-- Runs check-in and code redemption via Docker
-- Uses `docker-compose run --rm hoyo checkin redeem`
+## Quick Start
 
-## Flow Execution Details
+### On a New Server
 
-### Authentication Flow
-```python
-./bin/hoyo auth
-```
-- Must run locally (not in Docker) because it opens a browser
-- Creates/updates session data in `/Users/sixomac/SessionData/`
-- Scheduled weekly to prevent session expiration
-
-### Check-in Flow
-```python
-docker-compose run --rm hoyo checkin redeem
-```
-- Runs in Docker container for isolation
-- Uses existing session data (mounted as volume)
-- Outputs logs visible in Prefect UI
-
-## Monitoring
-
-View deployments and runs:
 ```bash
-prefect deployment ls
-prefect flow-run ls --limit 10
+# Clone the repository
+git clone <your-repo-url> ~/project/hoyo
+cd ~/project/hoyo
+
+# Run deployment script
+./deploy/start.sh
 ```
 
-Or visit the Prefect UI:
-```
-http://127.0.0.1:4200
-```
+The script will:
+1. Create `.env` if missing
+2. Prompt for `PREFECT_PATH` if not set
+3. Create Python 3.11 venv
+4. Install dependencies from requirements.txt
+5. Install Playwright browsers to shared cache (if needed)
+6. Build Docker image
+7. Register deployment with Prefect
 
-## Troubleshooting
+### Prerequisites
 
-### Session expired error
-Run authentication manually:
-```bash
-cd /Users/sixomac/project/hoyo
-./bin/hoyo auth
-```
-
-### Docker command fails
-Verify Docker setup:
-```bash
-cd /Users/sixomac/project/hoyo
-docker-compose run --rm hoyo checkin redeem
-```
-
-### Missing session file
-Check that session data exists:
-```bash
-ls /Users/sixomac/SessionData/hoyo_session_data.json
-```
-
-### Deployment not found
-Redeploy the flows:
-```bash
-python deploy/prefect_deployment.py
-```
+- Docker and docker-compose installed
+- Python 3.11 installed
+- Prefect installation with `personal-pool` worker configured
+- Git (for pulling code)
 
 ## Environment Variables
 
-Docker container uses `.env` file (see `.env.example`):
+Create a `.env` file in the project root:
+
 ```bash
-HOYO_USER=your_email@example.com
-HOYO_PASSWORD=your_password
-SESSION_PATH=/app/SessionData  # Container path, not host path
+# Path to external Prefect installation (REQUIRED)
+PREFECT_PATH=~/project/housework/prefect
+
+# Optional: Custom session data path
+SESSION_DATA_PATH=~/SessionData
+
+# Optional: Custom Playwright cache path (auto-detected by default)
+# macOS: ~/Library/Caches/ms-playwright
+# Linux: ~/.cache/ms-playwright
+PLAYWRIGHT_CACHE=~/.cache/ms-playwright
 ```
 
-## Schedule Customization
+## Docker Image Details
 
-To change schedules, edit [prefect_deployment.py](prefect_deployment.py):
+**New optimized image: ~762MB** (reduced from 2GB!)
 
-```python
-# Auth flow schedule (Cron format)
-schedule=Cron("0 2 * * 0", timezone="America/Los_Angeles")  # Sunday 2 AM
+Breakdown:
+- Base Python 3.11: ~109MB
+- System dependencies: ~228MB (runtime libs for Chromium)
+- Python packages: ~183MB
+- Your code: ~500KB
+- **No browsers inside** - mounted from host
 
-# Checkin flow schedule
-schedule=Cron("0 10 * * *", timezone="America/Los_Angeles")  # Daily 10 AM
-```
-
-Then redeploy:
-```bash
-python deploy/prefect_deployment.py
-```
+The Docker image is portable but requires:
+- Playwright browser cache mounted from host
+- Session data mounted from host
 
 ## File Structure
 
 ```
-/Users/sixomac/project/hoyo/
+hoyo/
 ├── deploy/
-│   ├── prefect_deployment.py    # Deployment configuration
-│   └── README.md                # This file
-├── bin/hoyo                     # CLI wrapper
-├── main.py                      # Application entry point
-├── docker-compose.yml           # Docker orchestration
-├── .env                         # Environment variables (gitignored)
-└── README.md                    # Main project documentation
+│   ├── start.sh                    # Main deployment script
+│   ├── prefect_deployment.py       # Prefect flow definition
+│   └── README.md                   # This file
+├── Dockerfile                      # Optimized Docker image (Python 3.11)
+├── docker-compose.yml              # Docker setup with volume mounts
+├── requirements.txt                # Python dependencies (no Prefect)
+├── .env                            # Environment configuration
+└── bin/hoyo                        # Local binary
 ```
 
-## Related Documentation
+## Deployment Schedule
 
-- Main project README: [../README.md](../README.md)
-- Docker setup: [../README.md#docker-usage](../README.md#docker-usage)
-- Prefect docs: https://docs.prefect.io
+- **Flow name**: `hoyo-daily-flow`
+- **Schedule**: Daily at 10:00 AM Pacific Time
+- **Worker pool**: `personal-pool`
+- **Steps**:
+  1. Run `hoyo auth` (refresh session)
+  2. Run `hoyo checkin redeem` (daily tasks)
+
+## Manual Operations
+
+### Run flow manually
+```bash
+prefect deployment run hoyo-daily-flow
+```
+
+### View deployments
+```bash
+prefect deployment ls
+```
+
+### Test locally
+```bash
+# Run full flow locally
+./bin/hoyo auth
+./bin/hoyo checkin redeem
+
+# Or test Docker container (for checkin/redeem only)
+docker-compose run --rm hoyo checkin redeem
+```
+
+### Rebuild Docker image
+```bash
+docker-compose build --no-cache
+```
+
+### Update deployment
+```bash
+cd ~/project/hoyo
+git pull
+./deploy/start.sh
+```
+
+## Troubleshooting
+
+### Issue: Prefect deployment fails
+- Check `PREFECT_PATH` is correct in `.env`
+- Verify Prefect venv exists at `$PREFECT_PATH/venv`
+- Ensure Prefect worker is running: `prefect worker start --pool personal-pool`
+
+### Issue: Docker build fails
+- Ensure Python 3.11 is available
+- Check internet connection for package downloads
+- Try: `docker-compose build --no-cache`
+
+### Issue: Playwright browsers not found
+```bash
+# Install browsers manually
+source venv/bin/activate
+python -m playwright install chromium
+```
+
+### Issue: Auth fails
+- Auth requires browser interaction, must run locally: `./bin/hoyo auth`
+- Auth cannot run in Docker (no display)
+- Session is saved and mounted into Docker for checkin/redeem
+
+### Issue: start.sh fails
+```bash
+# Make sure it's executable
+chmod +x deploy/start.sh
+
+# Run with bash explicitly
+bash deploy/start.sh
+```
+
+## Platform Differences
+
+### macOS
+- Playwright cache: `~/Library/Caches/ms-playwright`
+- Docker Desktop native
+
+### Linux
+- Playwright cache: `~/.cache/ms-playwright`
+- May need Docker group permissions: `sudo usermod -aG docker $USER`
+
+## Security Notes
+
+- `.env` file contains sensitive paths - keep it in `.gitignore`
+- Session data contains authentication cookies - keep it secure
+- Playwright browsers are mounted read-only into Docker
+- Docker container has no network access except what's needed
+
+## Advanced Configuration
+
+### Change schedule
+Edit `deploy/prefect_deployment.py`:
+```python
+schedule=Cron("0 10 * * *", timezone="America/Los_Angeles")
+```
+
+Then redeploy:
+```bash
+./deploy/start.sh
+```
+
+### Use different worker pool
+Edit `deploy/prefect_deployment.py`:
+```python
+work_pool_name="your-pool-name"
+```
+
+### Custom session path
+Add to `.env`:
+```bash
+SESSION_DATA_PATH=/custom/path/to/session
+```
+
+## Key Design Decisions
+
+1. **Prefect is external** - Not in requirements.txt, managed separately
+2. **Browsers on host** - Shared cache, not in Docker image
+3. **Auth runs locally** - Needs browser interaction
+4. **Docker for portability** - Code + deps containerized
+5. **Python 3.11** - Stable, good package compatibility
+
+## Notes
+
+- **DO NOT** run auth in Docker (requires browser interaction)
+- Session data is mounted from host into container
+- Browsers are shared between host and container
+- Docker image is portable but requires host browser cache
+- Prefect must be installed separately (external project)
+- The deployment script handles everything automatically

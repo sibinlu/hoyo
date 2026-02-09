@@ -1,10 +1,10 @@
-FROM python:3.14-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for playwright (minimal set)
+# Install minimal system dependencies for playwright runtime
+# (browsers will be mounted from host, so we don't need playwright install)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
     ca-certificates \
     fonts-liberation \
     libnss3 \
@@ -26,17 +26,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install only Chromium browser (not all browsers) with minimal deps
-RUN playwright install --with-deps chromium \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean \
-    && rm -rf /root/.cache
-
 # Copy the entire hoyo application
 COPY . .
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+# Tell Playwright to use mounted browser cache from host
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Use python command directly instead of the bin wrapper
 ENTRYPOINT ["python", "main.py"]
