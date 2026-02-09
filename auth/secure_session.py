@@ -24,7 +24,7 @@ class SecureSessionManager:
     """
     
     def __init__(self, session_path: str = "checkin"):
-        self.session_dir = Path(session_path)
+        self.session_dir = Path(os.path.expanduser(session_path))
         self.session_file = self.session_dir / "hoyo_session_data.json"
         self.key_file = self.session_dir / ".session_key"
         
@@ -281,7 +281,7 @@ def get_session_manager(session_path: str = None) -> SecureSessionManager:
             _session_manager = SecureSessionManager(session_path)
         else:
             # Use SESSION_PATH environment variable or default
-            default_path = os.path.join(os.getenv("SESSION_PATH", "checkin"))
+            default_path = os.path.expanduser(os.getenv("SESSION_PATH", "checkin"))
             _session_manager = SecureSessionManager(default_path)
     
     return _session_manager
